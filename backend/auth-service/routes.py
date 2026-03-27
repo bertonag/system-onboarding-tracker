@@ -97,9 +97,11 @@ def login():
     
     if not user.is_active:
         return jsonify({"error": "Account is inactive"}), 403
+
+    user_permissions = user.get_permissions()          # This returns a set
     
-    token = create_token(user.id)
-    
+    token = create_token(user.id, user_permissions)    # Pass the set → function will convert it
+
     return jsonify({
         "message": "Login successful",
         "user": {

@@ -1,64 +1,50 @@
-import React, { useState } from 'react';
+// src/App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import Dashboard from './pages/Dashboard';
+import { PrivateRoute, ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      // Use proxy if you added it: '/api/auth/login'
-      const response = await axios.post('http://localhost:5001/login', {
-        username,
-        password,
-      });
-      setMessage('Login successful! Token: ' + response.data.token);
-      localStorage.setItem('token', response.data.token);
-    } catch (error) {
-      setMessage(
-        'Login failed: ' +
-          (error.response?.data?.msg || error.message)
-      );
-    }
-  };
-
   return (
-    <div style={{ maxWidth: '400px', margin: '2rem auto', padding: '1rem' }}>
-      <h1>System Onboarding Tracker</h1>
-      
-      <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Username:</label><br />
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
-        
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password:</label><br />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
-        
-        <button type="submit" style={{ padding: '0.6rem 1.2rem' }}>
-          Login
-        </button>
-      </form>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
 
-      {message && (
-        <p style={{ marginTop: '1.5rem', color: message.includes('successful') ? 'green' : 'red' }}>
-          {message}
-        </p>
-      )}
-    </div>
+        {/* Basic Protected Dashboard */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } 
+        />
+
+        {/* Example: Admin-only page */}
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredPermission="view_admin_dashboard">
+              <div>Admin Dashboard - Only users with 'view_admin_dashboard' permission can see this</div>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Example: Checklist management page */}
+        <Route 
+          path="/checklists" 
+          element={
+            <ProtectedRoute requiredPermission="edit_checklist_items">
+              <div>Checklist Management Page</div>
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route path="*" element={<div>404 - Page Not Found</div>} />
+      </Routes>
+    </Router>
   );
 }
 
