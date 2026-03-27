@@ -53,6 +53,13 @@ class User(db.Model):
     
     def __repr__(self):
         return f"<User {self.username}>"
+    
+    def get_permissions(self):
+        perms = set()
+        for role in self.roles:
+            for perm in role.permissions:
+                perms.add(perm.name)
+        return list(perms)        # Return list instead of set
 
 class Role(db.Model):
     __tablename__ = 'roles'
