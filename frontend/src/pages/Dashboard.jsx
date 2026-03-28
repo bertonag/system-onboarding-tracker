@@ -5,7 +5,8 @@ import Sidebar from '../components/Sidebar';
 import { getCurrentUser } from '../services/api';
 import { getUserPermissions, hasPermission } from '../services/auth';
 import './Dashboard.css';
-
+const goToProjects = () => navigate('/projects');
+const goToChecklists = () => navigate('/checklists');
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -15,7 +16,7 @@ export default function Dashboard() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ full_name: '', email: '' });
-
+  
   useEffect(() => {
     const loadDashboard = async () => {
       try {

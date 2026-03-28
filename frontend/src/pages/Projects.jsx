@@ -1,18 +1,19 @@
 // src/pages/Projects.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { ProtectedRoute } from '../components/ProtectedRoute';
-import { getCurrentUser } from '../services/api';
+import { getCurrentUser, getProjects, createProject } from '../services/api';
 import { getUserPermissions } from '../services/auth';
 import './Projects.css';
 
 export default function Projects() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [user, setUser] = useState(null);
+  const showCreateModal = location.pathname === '/projects/new';
   const [permissions, setPermissions] = useState([]);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -42,51 +43,69 @@ export default function Projects() {
     loadUser();
   }, []);
 
-  // Load mock projects
+  // Load projects from backend
   useEffect(() => {
-    setTimeout(() => {
-      setProjects([
-        { 
-          id: 1, 
-          name: 'IFMS Enhancement - Domestic Arrears', 
-          description: 'Deployment of domestic arrears business process', 
-          status: 'In Progress', 
-          template: 'Major Change', 
-          progress: 65, 
-          owner: 'Gilbert' 
-        },
-        { 
-          id: 2, 
-          name: 'New Budget Utilization Report', 
-          description: 'Development of new report on the system', 
-          status: 'Completed', 
-          template: 'Moderate Change', 
-          progress: 100, 
-          owner: 'Finance Team' 
-        }
-      ]);
-      setLoading(false);
-    }, 600);
+    const loadProjects = async () => {
+      try {
+        const response = await getProjects();
+        setProjects(response.data || []);
+      } catch (err) {
+        console.error("Failed to load projects:", err);
+        // Fallback mock data if backend is not available yet
+        setProjects([
+          { 
+            id: 1, 
+            name: 'IFMS Enhancement - Domestic Arrears', 
+            description: 'Deployment of domestic arrears business process', 
+            status: 'In Progress', 
+            template: 'Major Change', 
+            progress: 65, 
+            owner: 'Gilbert' 
+          },
+          { 
+            id: 2, 
+            name: 'New Budget Utilization Report', 
+            description: 'Development of new report on the system', 
+            status: 'Completed', 
+            template: 'Moderate Change', 
+            progress: 100, 
+            owner: 'Finance Team' 
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProjects();
   }, []);
 
-  const handleCreateProject = (e) => {
+  const handleCreateProject = async (e) => {
     e.preventDefault();
     if (!newProject.name.trim()) return;
 
-    const project = {
-      id: Date.now(),
-      ...newProject,
-      status: 'Pending',
-      progress: 0,
-      owner: 'You',
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const response = await createProject(newProject);
+      // Add the returned project to the list
+      setProjects([response.data, ...projects]);
+      setNewProject({ name: '', description: '', template: 'System Onboarding' });
+      alert('✅ Project created successfully!');
+      navigate('/projects');
+    } catch (err) {
+      console.error("Create project failed:", err);
+      alert('Failed to create project on server. Saving locally for now.');
 
-    setProjects([project, ...projects]);
-    setShowCreateModal(false);
-    setNewProject({ name: '', description: '', template: 'System Onboarding' });
-
-    alert('✅ Project created successfully!\n\n(Backend integration will be added in next phase)');
+      // Fallback: create locally
+      const project = {
+        id: Date.now(),
+        ...newProject,
+        status: 'Pending',
+        progress: 0,
+        owner: 'You'
+      };
+      setProjects([project, ...projects]);
+      setNewProject({ name: '', description: '', template: 'System Onboarding' });
+      navigate('/projects');
+    }
   };
 
   const handleLogout = () => {
@@ -100,12 +119,12 @@ export default function Projects() {
 
   return (
     <ProtectedRoute requiredPermission="view_projects">
-      <div className="projects-shell" style={{ minHeight: '100vh' }}>
+      <div style={{ display: 'flex', minHeight: '100vh' }}>
         {/* Sidebar */}
         <Sidebar />
 
-        {/* Main Content Area */}
-        <div className="projects-main">
+        {/* Main Content */}
+        <div style={{ marginLeft: '260px', flex: 1 }}>
           <div className="projects-container">
             <header className="projects-header">
               <div className="header-title-block">
@@ -150,8 +169,6 @@ export default function Projects() {
                   </div>
                 )}
               </div>
-
-              <button className="btn-primary" onClick={() => setShowCreateModal(true)}>+ New Project</button>
             </header>
 
             {loading ? (
@@ -224,7 +241,7 @@ export default function Projects() {
                       <button 
                         type="button" 
                         className="btn-secondary" 
-                        onClick={() => setShowCreateModal(false)}
+                        onClick={() => navigate('/projects')}
                       >
                         Cancel
                       </button>
