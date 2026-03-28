@@ -1,9 +1,11 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
-import { PrivateRoute, ProtectedRoute } from './components/ProtectedRoute';
+import Projects from './pages/Projects';
+import ChecklistTracker from './pages/ChecklistTracker';   // ← New import
+import { PrivateRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -12,7 +14,7 @@ function App() {
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Basic Protected Dashboard */}
+        {/* Protected Routes */}
         <Route 
           path="/dashboard" 
           element={
@@ -22,23 +24,22 @@ function App() {
           } 
         />
 
-        {/* Example: Admin-only page */}
         <Route 
-          path="/admin" 
+          path="/projects" 
           element={
-            <ProtectedRoute requiredPermission="view_admin_dashboard">
-              <div>Admin Dashboard - Only users with 'view_admin_dashboard' permission can see this</div>
-            </ProtectedRoute>
+            <PrivateRoute>
+              <Projects />
+            </PrivateRoute>
           } 
         />
 
-        {/* Example: Checklist management page */}
+        {/* New: Checklist Tracker Route */}
         <Route 
           path="/checklists" 
           element={
-            <ProtectedRoute requiredPermission="edit_checklist_items">
-              <div>Checklist Management Page</div>
-            </ProtectedRoute>
+            <PrivateRoute>
+              <ChecklistTracker />
+            </PrivateRoute>
           } 
         />
 

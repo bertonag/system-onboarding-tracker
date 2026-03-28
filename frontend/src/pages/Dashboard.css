@@ -1,0 +1,373 @@
+.dashboard-container {
+  padding: 30px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 1200px;
+  min-height: 100vh;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  color: #1f2630;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+.dashboard-title-block h1 {
+  margin: 0 0 5px 0;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.dashboard-subtitle {
+  margin: 0;
+  color: #555;
+  font-size: 1.05rem;
+}
+
+.dashboard-profile-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.dashboard-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #f6f7fb;
+  border-radius: 999px;
+  border: 1px solid #dde2eb;
+  margin-left: auto;
+}
+
+.dash-icon {
+  background: transparent;
+  border: 1px solid #cbd3e3;
+  border-radius: 999px;
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.dash-icon:hover {
+  background: #ebf4ff;
+  border-color: #a8c6f1;
+}
+
+.profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.profile-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 100%;
+  background: #1976d2;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.profile-details {
+  font-size: 0.88rem;
+}
+
+.profile-name {
+  font-weight: 700;
+}
+
+.profile-email,
+.profile-permissions {
+  color: #555;
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.logout-btn {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.12);
+}
+
+.logout-btn:hover {
+  background: #b02629;
+}
+
+.dashboard-error {
+  color: #b00020;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 36px;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e7ebee;
+  padding: 22px;
+  min-height: 160px;
+  color: #2a333d;
+}
+
+.stat-card h3 {
+  margin-top: 0;
+}
+
+.permissions-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #444;
+}
+
+.permissions-list li {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.quick-access h2 {
+  margin-bottom: 20px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+@media (min-width: 1024px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 216px;
+  border-radius: 12px;
+  padding: 24px;
+  background: white;
+  border: 2px solid;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.action-card h3 {
+  margin-top: 0;
+}
+
+.action-card p {
+  color: #555;
+  margin: 0 0 18px;
+}
+
+.action-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+}
+
+.action-projects {
+  border-color: #1976d2;
+}
+
+.action-projects .action-btn {
+  background: #1976d2;
+}
+
+.action-checklist {
+  border-color: #28a745;
+}
+
+.action-checklist .action-btn {
+  background: #28a745;
+}
+
+.action-admin {
+  border-color: #d32f2f;
+  background: #fff3cd;
+}
+
+.action-admin .action-btn {
+  background: #d32f2f;
+}
+
+.dashboard-footer {
+  margin-top: 40px;
+  text-align: center;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.dashboard-loading {
+  text-align: center;
+  margin-top: 120px;
+  font-size: 1.2rem;
+}
+
+.profile-menu {
+  position: absolute;
+  right: 16px;
+  top: 68px;
+  z-index: 100;
+  border: 1px solid #d8dbe1;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  padding: 8px;
+  min-width: 172px;
+}
+
+.profile-menu button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: #333;
+  border-radius: 6px;
+}
+
+.profile-menu button:hover {
+  background: #f2f4f8;
+}
+
+.profile-card-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.profile-card {
+  width: min(90vw, 420px);
+  border-radius: 14px;
+  background: #fff;
+  padding: 24px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+}
+
+.profile-card h3 {
+  margin-top: 0;
+}
+
+.profile-card form {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-card label {
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.profile-card input {
+  border: 1px solid #c2c7cd;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.permissions-edit {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fbfdff;
+  margin-top: 8px;
+  font-size: 0.88rem;
+}
+
+.permissions-edit ul {
+  padding-left: 16px;
+  margin: 6px 0 0;
+}
+
+.profile-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: #1976d2;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #dbdbdb;
+  color: #333;
+}
+
+@media (max-width: 770px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-profile-wrap {
+    justify-content: space-between;
+  }
+}
