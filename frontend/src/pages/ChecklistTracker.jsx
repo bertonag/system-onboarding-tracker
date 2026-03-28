@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { ProtectedRoute } from '../components/ProtectedRoute';
-import { getCurrentUser } from '../services/api';
+import { getCurrentUser, getProjects } from '../services/api';
 import { getUserPermissions } from '../services/auth';
 import './ChecklistTracker.css';
 
 export default function ChecklistTracker() {
   const navigate = useNavigate();
+
+  const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [checklistType, setChecklistType] = useState('SAC');
   const [stages, setStages] = useState([]);
@@ -18,12 +20,7 @@ export default function ChecklistTracker() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ full_name: '', email: '' });
-
-  // Mock projects
-  const projects = [
-    { id: 1, name: "IFMS Enhancement - Domestic Arrears", template: "Major Change" },
-    { id: 2, name: "New Budget Utilization Report", template: "Moderate Change" },
-  ];
+  const [loading, setLoading] = useState(true);
 
   // Load user data
   useEffect(() => {
@@ -44,63 +41,53 @@ export default function ChecklistTracker() {
     loadUser();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
+  // Load projects from backend
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const response = await getProjects();
+        setProjects(response.data || []);
+      } catch (err) {
+        console.error("Failed to load projects from backend:", err);
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProjects();
+  }, []);
 
-  const avatarLetter = (user && (user.full_name || user.username)) 
-    ? (user.full_name || user.username)[0].toUpperCase() 
-    : 'U';
-
-  // Checklist Templates from your Excel
-  const checklistTemplates = {
-    SAC: [
-      { stage: "Planning & Initiation", items: [
-        { id: 1, no: "1.1", requirement: "System concept note and business case", team: "Sponsor", status: false, comments: "" },
-        { id: 2, no: "1.2", requirement: "Confirm availability of funds", team: "Owner", status: false, comments: "" },
-      ]},
-      { stage: "Requirements Gathering & Analysis", items: [
-        { id: 3, no: "2.1", requirement: "Develop functional business requirements", team: "Business Team", status: false, comments: "" },
-      ]},
-      { stage: "Testing", items: [
-        { id: 4, no: "6.1", requirement: "Develop test cases and procedures", team: "Business Team", status: false, comments: "" },
-      ]}
-    ],
-    Minor: [
-      { stage: "Conceptualisation and requirements", items: [
-        { id: 101, no: "1", requirement: "Prepare a business case", team: "Business Team", status: false, comments: "" },
-        { id: 102, no: "2", requirement: "Carry out the User Acceptance Tests (UAT)", team: "Business Team", status: false, comments: "" },
-      ]},
-      { stage: "Deployment to production", items: [
-        { id: 103, no: "3", requirement: "Deployment to production", team: "Technical Team", status: false, comments: "" },
-      ]}
-    ],
-    Moderate: [
-      { stage: "Conceptualisation and requirements", items: [
-        { id: 201, no: "1", requirement: "Prepare draft of concept note/business case", team: "Business Team", status: false, comments: "" },
-      ]},
-      { stage: "Development/Coding & Testing", items: [
-        { id: 202, no: "2", requirement: "Carry out the User Acceptance Tests (UAT)", team: "Business Team", status: false, comments: "" },
-      ]}
-    ],
-    Major: [
-      { stage: "Conceptualisation and requirements", items: [
-        { id: 301, no: "1", requirement: "Prepare draft of concept note/business case", team: "Business Team", status: false, comments: "" },
-      ]},
-      { stage: "Training & Go-live", items: [
-        { id: 302, no: "2", requirement: "Training engagements for internal users", team: "Business Team", status: false, comments: "" },
-      ]}
-    ]
-  };
-
-  // Load checklist when type changes
+  // Load checklist templates from backend when checklistType changes
   useEffect(() => {
     if (checklistType) {
-      setStages(checklistTemplates[checklistType] || []);
-      calculateProgress(checklistTemplates[checklistType] || []);
+      loadChecklistTemplates();
     }
   }, [checklistType]);
+
+  const loadChecklistTemplates = async () => {
+    try {
+      const response = await fetch('/api/onboarding/checklist-templates', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const templates = await response.json();
+        const currentTemplate = templates[checklistType] || templates['SAC'] || [];
+        setStages(currentTemplate);
+        calculateProgress(currentTemplate);
+      } else {
+        console.error("Failed to load checklist templates");
+        setStages([]);
+      }
+    } catch (err) {
+      console.error("Error loading checklist templates:", err);
+      setStages([]);
+    }
+  };
 
   const calculateProgress = (currentStages) => {
     let totalItems = 0;
@@ -117,34 +104,30 @@ export default function ChecklistTracker() {
   };
 
   const toggleItem = (stageIndex, itemId) => {
-    const newStages = [...stages];
-    const stage = newStages[stageIndex];
-    const item = stage.items.find(i => i.id === itemId);
-    
-    if (item) {
-      item.status = !item.status;
-      setStages(newStages);
-      calculateProgress(newStages);
-    }
+    console.log(`Toggle item ${itemId} in stage ${stageIndex} - connect to backend later`);
+    // TODO: Call PUT /api/onboarding/projects/{project_id}/checklist/items/{item_id}
   };
 
   const updateComments = (stageIndex, itemId, comments) => {
-    const newStages = [...stages];
-    const item = newStages[stageIndex].items.find(i => i.id === itemId);
-    if (item) {
-      item.comments = comments;
-      setStages(newStages);
-    }
+    console.log(`Update comments for item ${itemId} - connect to backend later`);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  // Avatar letter
+  const avatarLetter = user && (user.full_name || user.username)
+    ? (user.full_name || user.username)[0].toUpperCase()
+    : 'U';
 
   return (
     <ProtectedRoute requiredPermission="edit_checklist_items">
-      <div className="checklist-shell" style={{ minHeight: '100vh' }}>
-        {/* Sidebar */}
+      <div style={{ display: 'flex', minHeight: '100vh' }}>
         <Sidebar />
 
-        {/* Main Content Area */}
-        <div className="checklist-main">
+        <div style={{ marginLeft: '260px', flex: 1 }}>
           <div className="checklist-container">
             <header className="checklist-header">
               <div className="header-title-block">
@@ -224,86 +207,60 @@ export default function ChecklistTracker() {
               </div>
             </div>
 
-            {/* Progress Bar */}
-            {stages.length > 0 && (
-              <div style={{ marginBottom: '30px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <strong>Overall Progress</strong>
-                  <strong>{progress}%</strong>
-                </div>
-                <div style={{ height: '12px', background: '#e0e0e0', borderRadius: '6px', overflow: 'hidden' }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${progress}%`, 
-                    background: progress > 80 ? '#28a745' : progress > 40 ? '#ffc107' : '#1976d2',
-                    transition: 'width 0.4s'
-                  }} />
-                </div>
-              </div>
-            )}
-
-            {/* Checklist Stages */}
             {stages.length > 0 ? (
-              stages.map((stage, stageIndex) => (
-                <div key={stageIndex} style={{ 
-                  marginBottom: '35px', 
-                  border: '1px solid #ddd', 
-                  borderRadius: '10px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{ 
-                    background: '#f8f9fa', 
-                    padding: '16px 24px', 
-                    fontWeight: '600',
-                    borderBottom: '1px solid #ddd'
-                  }}>
-                    {stage.stage}
+              <>
+                {/* Progress Bar */}
+                <div style={{ marginBottom: '30px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong>Overall Progress</strong>
+                    <strong>{progress}%</strong>
                   </div>
-
-                  <div style={{ padding: '10px 0' }}>
-                    {stage.items.map((item, idx) => (
-                      <div key={item.id} style={{
-                        padding: '16px 24px',
-                        borderBottom: idx < stage.items.length - 1 ? '1px solid #eee' : 'none',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '15px'
-                      }}>
-                        <input 
-                          type="checkbox"
-                          checked={item.status}
-                          onChange={() => toggleItem(stageIndex, item.id)}
-                          style={{ marginTop: '6px', transform: 'scale(1.3)' }}
-                        />
-                        
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: '500' }}>
-                            {item.no} - {item.requirement}
-                          </div>
-                          <small style={{ color: '#666' }}>Team: {item.team}</small>
-                        </div>
-
-                        <textarea
-                          placeholder="Comments / Notes"
-                          value={item.comments || ''}
-                          onChange={(e) => updateComments(stageIndex, item.id, e.target.value)}
-                          style={{
-                            width: '320px',
-                            height: '60px',
-                            padding: '8px',
-                            borderRadius: '6px',
-                            border: '1px solid #ccc',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                    ))}
+                  <div style={{ height: '12px', background: '#e0e0e0', borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      height: '100%', 
+                      width: `${progress}%`, 
+                      background: progress > 80 ? '#28a745' : progress > 40 ? '#ffc107' : '#1976d2',
+                      transition: 'width 0.4s'
+                    }} />
                   </div>
                 </div>
-              ))
+
+                {/* Checklist Stages */}
+                {stages.map((stage, stageIndex) => (
+                  <div key={stageIndex} className="checklist-stage">
+                    <div className="stage-header">
+                      {stage.stage}
+                    </div>
+
+                    <div className="stage-items">
+                      {stage.items.map((item, idx) => (
+                        <div key={item.id} className="checklist-item">
+                          <input 
+                            type="checkbox"
+                            checked={item.status}
+                            onChange={() => toggleItem(stageIndex, item.id)}
+                          />
+                          <div className="item-content">
+                            <div className="item-requirement">
+                              {item.no} - {item.requirement}
+                            </div>
+                            <small className="item-team">Team: {item.team}</small>
+                          </div>
+                          <textarea
+                            placeholder="Comments / Notes"
+                            value={item.comments || ''}
+                            onChange={(e) => updateComments(stageIndex, item.id, e.target.value)}
+                            className="item-comments"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
             ) : (
-              <p style={{ textAlign: 'center', color: '#666', fontSize: '18px', marginTop: '80px' }}>
-                Please select a project and checklist type to begin tracking.
+              <p className="no-data-message">
+                {loading ? "Loading from backend..." : "Please select a project and checklist type to begin tracking."}
               </p>
             )}
           </div>
@@ -313,13 +270,11 @@ export default function ChecklistTracker() {
             <div className="profile-card-overlay" role="dialog" aria-modal="true">
               <div className="profile-card">
                 <h3>Edit Profile</h3>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setUser((curr) => ({ ...curr, full_name: profileForm.full_name, email: profileForm.email }));
-                    setIsEditProfileOpen(false);
-                  }}
-                >
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  setUser((curr) => ({ ...curr, full_name: profileForm.full_name, email: profileForm.email }));
+                  setIsEditProfileOpen(false);
+                }}>
                   <label>
                     Full Name
                     <input

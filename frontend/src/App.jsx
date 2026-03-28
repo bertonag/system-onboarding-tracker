@@ -33,6 +33,15 @@ function App() {
           } 
         />
 
+        <Route 
+          path="/projects/new" 
+          element={
+            <PrivateRoute>
+              <Projects />
+            </PrivateRoute>
+          } 
+        />
+
         {/* New: Checklist Tracker Route */}
         <Route 
           path="/checklists" 

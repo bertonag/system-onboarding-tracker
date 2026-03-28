@@ -1,9 +1,10 @@
 // src/components/Sidebar.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getUserPermissions, hasPermission } from '../services/auth';
 
 export default function Sidebar() {
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
   const permissions = getUserPermissions();
 
   return (
@@ -28,7 +29,36 @@ export default function Sidebar() {
       {/* Navigation Menu */}
       <div style={{ padding: '20px 0' }}>
         <NavItem to="/dashboard" icon="🏠" label="Dashboard" />
-        <NavItem to="/projects" icon="📋" label="Projects" permission="view_projects" />
+
+        {hasPermission('view_projects') && (
+          <>
+            <div
+              onClick={() => setProjectsExpanded((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '14px 24px',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '15px',
+                backgroundColor: projectsExpanded ? '#334155' : 'transparent',
+                borderLeft: projectsExpanded ? '4px solid #60a5fa' : '4px solid transparent',
+              }}
+            >
+              <span style={{ fontSize: '18px' }}>📋</span>
+              <span>Projects</span>
+              <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{projectsExpanded ? '▾' : '▸'}</span>
+            </div>
+
+            {projectsExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '24px' }}>
+                <SubNavItem to="/projects" label="View Projects" />
+                <SubNavItem to="/projects/new" label="New Project" />
+              </div>
+            )}
+          </>
+        )}
 
         {hasPermission('edit_checklist_items') && (
           <NavItem to="/checklists" icon="✅" label="Checklist Tracker" />
@@ -78,6 +108,25 @@ function NavItem({ to, icon, label, permission }) {
     >
       <span style={{ fontSize: '18px' }}>{icon}</span>
       <span>{label}</span>
+    </NavLink>
+  );
+}
+
+function SubNavItem({ to, label }) {
+  return (
+    <NavLink
+      to={to}
+      style={({ isActive }) => ({
+        padding: '10px 24px',
+        color: isActive ? '#60a5fa' : '#d1d5db',
+        textDecoration: 'none',
+        fontSize: '14px',
+        borderLeft: isActive ? '4px solid #60a5fa' : '4px solid transparent',
+        backgroundColor: isActive ? '#1f2937' : 'transparent',
+        margin: '1px 0',
+      })}
+    >
+      {label}
     </NavLink>
   );
 }
