@@ -1,8 +1,10 @@
 // src/pages/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
 import { getCurrentUser } from '../services/api';
 import { getUserPermissions, hasPermission } from '../services/auth';
-import { useNavigate } from 'react-router-dom';
+import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -10,15 +12,20 @@ export default function Dashboard() {
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({ full_name: '', email: '' });
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        // Get user info from backend
         const response = await getCurrentUser();
         setUser(response.data);
+        setProfileForm({
+          full_name: response.data.full_name || '',
+          email: response.data.email || ''
+        });
 
-        // Get permissions from JWT token
         const userPerms = getUserPermissions();
         setPermissions(userPerms);
       } catch (err) {
@@ -37,113 +44,154 @@ export default function Dashboard() {
     navigate('/login');
   };
 
+  const goToProjects = () => navigate('/projects');
+  const goToChecklists = () => navigate('/checklists');
+
+  const avatarLetter = (user && (user.full_name || user.username)) 
+    ? (user.full_name || user.username)[0].toUpperCase() 
+    : 'U';
+
   if (loading) {
-    return <div style={{ textAlign: 'center', marginTop: '100px' }}>Loading dashboard...</div>;
+    return <div className="dashboard-loading">Loading dashboard...</div>;
   }
 
   return (
-    <div style={{ padding: '30px', fontFamily: 'Arial, sans-serif', maxWidth: '1100px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '30px',
-        borderBottom: '1px solid #eee',
-        paddingBottom: '20px'
-      }}>
-        <div>
-          <h1>System Onboarding Tracker</h1>
-          <p>Welcome, <strong>{user?.full_name || user?.username}</strong></p>
-        </div>
-        
-        <button 
-          onClick={handleLogout}
-          style={{
-            padding: '10px 20px',
-            background: '#d32f2f',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          Logout
-        </button>
-      </div>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Sidebar */}
+      <Sidebar />
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {/* Main Content */}
+      <div style={{ marginLeft: '260px', flex: 1 }}>
+        <div className="dashboard-container">
+          <header className="dashboard-header">
+            <div className="dashboard-title-block">
+              <h1>System Onboarding Tracker</h1>
+              <p className="dashboard-subtitle">
+                Welcome back, <strong>{user?.full_name || user?.username}</strong>
+              </p>
+            </div>
 
-      {/* User Info & Permissions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
-        <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
-          <h3>User Information</h3>
-          <p><strong>Username:</strong> {user?.username}</p>
-          <p><strong>Email:</strong> {user?.email}</p>
-          <p><strong>User ID:</strong> {user?.id}</p>
-        </div>
+            <div className="dashboard-icons">
+              <button className="dash-icon" title="Help">❓</button>
+              <button className="dash-icon" title="Settings">⚙️</button>
+              <button className="dash-icon" title="Notifications">✨</button>
+              <button className="dash-icon" title="Apps">☰</button>
+            </div>
 
-        <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
-          <h3>Your Permissions ({permissions.length})</h3>
-          {permissions.length > 0 ? (
-            <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
-              {permissions.map((perm, index) => (
-                <li key={index} style={{ margin: '6px 0' }}>✓ {perm}</li>
-              ))}
-            </ul>
-          ) : (
-            <p>No permissions assigned yet.</p>
+            <div className="dashboard-profile-wrap" onBlur={() => setTimeout(() => setIsProfileMenuOpen(false), 150)}>
+              <div
+                className="profile-chip"
+                onClick={() => setIsProfileMenuOpen((v) => !v)}
+                aria-haspopup="true"
+                aria-expanded={isProfileMenuOpen}
+              >
+                <div className="profile-avatar">{avatarLetter}</div>
+                <div className="profile-details">
+                  <div className="profile-name">{user?.full_name || user?.username}</div>
+                  <div className="profile-email">{user?.email}</div>
+                </div>
+                <span className="profile-arrow">▾</span>
+              </div>
+
+              {isProfileMenuOpen && (
+                <div className="profile-menu">
+                  <button 
+                    type="button" 
+                    onClick={() => { 
+                      setIsEditProfileOpen(true); 
+                      setIsProfileMenuOpen(false); 
+                    }}
+                  >
+                    Edit Profile
+                  </button>
+                  <button type="button" onClick={handleLogout}>Sign out</button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {error && <p className="dashboard-error">{error}</p>}
+
+          <section className="quick-access">
+            <h2>Quick Access</h2>
+            <div className="cards-grid">
+              <article className="action-card action-projects" onClick={goToProjects}>
+                <h3>📋 Projects</h3>
+                <p>View all onboarding projects and their current status.</p>
+                <button className="action-btn">Go to Projects →</button>
+              </article>
+
+              {hasPermission('edit_checklist_items') && (
+                <article className="action-card action-checklist" onClick={goToChecklists}>
+                  <h3>✅ Checklist Tracker</h3>
+                  <p>Track progress using SAC and CDC checklists.</p>
+                  <button className="action-btn">Open Checklist Tracker →</button>
+                </article>
+              )}
+
+              {hasPermission('view_admin_dashboard') && (
+                <article className="action-card action-admin">
+                  <h3>🔧 Admin Panel</h3>
+                  <p>System administration and user management.</p>
+                  <button className="action-btn">Go to Admin Panel</button>
+                </article>
+              )}
+            </div>
+          </section>
+
+          <footer className="dashboard-footer">System Onboarding Tracker • Phase 2 Complete</footer>
+
+          {/* Edit Profile Modal */}
+          {isEditProfileOpen && (
+            <div className="profile-card-overlay" role="dialog" aria-modal="true">
+              <div className="profile-card">
+                <h3>Edit Profile</h3>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setUser((curr) => ({ ...curr, full_name: profileForm.full_name, email: profileForm.email }));
+                    setIsEditProfileOpen(false);
+                  }}
+                >
+                  <label>
+                    Full Name
+                    <input
+                      type="text"
+                      value={profileForm.full_name}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    Email
+                    <input
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+                    />
+                  </label>
+
+                  <div className="permissions-edit">
+                    <strong>Permissions ({permissions.length})</strong>
+                    <ul>
+                      {permissions.map((perm) => (
+                        <li key={perm}>{perm}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="profile-card-actions">
+                    <button type="button" onClick={() => setIsEditProfileOpen(false)} className="btn-secondary">
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-primary">
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Main Actions - RBAC Protected */}
-      <h2>Available Modules</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '20px' }}>
-        
-        {/* Always visible */}
-        <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px' }}>
-          <h3>Projects Overview</h3>
-          <p>View all onboarding projects and their status.</p>
-          <button style={{ marginTop: '15px', padding: '10px 20px' }}>
-            View Projects
-          </button>
-        </div>
-
-        {/* Visible only if user has permission */}
-        {hasPermission('edit_checklist_items') && (
-          <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px' }}>
-            <h3>Checklist Management</h3>
-            <p>Update checklist items and track progress.</p>
-            <button style={{ marginTop: '15px', padding: '10px 20px', background: '#1976d2', color: 'white', border: 'none' }}>
-              Manage Checklists
-            </button>
-          </div>
-        )}
-
-        {hasPermission('manage_projects') && (
-          <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px' }}>
-            <h3>Project Administration</h3>
-            <p>Create and manage onboarding projects.</p>
-            <button style={{ marginTop: '15px', padding: '10px 20px', background: '#1976d2', color: 'white', border: 'none' }}>
-              Create New Project
-            </button>
-          </div>
-        )}
-
-        {hasPermission('view_admin_dashboard') && (
-          <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px', background: '#fff3cd' }}>
-            <h3>Admin Dashboard</h3>
-            <p>System administration and user management.</p>
-            <button style={{ marginTop: '15px', padding: '10px 20px', background: '#d32f2f', color: 'white', border: 'none' }}>
-              Go to Admin Panel
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: '50px', textAlign: 'center', color: '#666', fontSize: '14px' }}>
-        System Onboarding Tracker • Built with RBAC
       </div>
     </div>
   );

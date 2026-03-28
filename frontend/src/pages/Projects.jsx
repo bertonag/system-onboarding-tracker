@@ -1,193 +1,298 @@
 // src/pages/Projects.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { getCurrentUser } from '../services/api';
+import { getUserPermissions } from '../services/auth';
+import './Projects.css';
 
 export default function Projects() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [user, setUser] = useState(null);
+  const [permissions, setPermissions] = useState([]);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({ full_name: '', email: '' });
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
-    template: 'System Onboarding' // Default template
+    template: 'System Onboarding'
   });
 
-  // Mock data for now (we'll connect to backend later)
+  // Load user data
   useEffect(() => {
-    // Simulate API call
+    const loadUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        setUser(response.data);
+        setProfileForm({
+          full_name: response.data.full_name || '',
+          email: response.data.email || ''
+        });
+        const userPerms = getUserPermissions();
+        setPermissions(userPerms);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Load mock projects
+  useEffect(() => {
     setTimeout(() => {
       setProjects([
-        {
-          id: 1,
-          name: "IFMS Enhancement - Domestic Arrears",
-          description: "Deployment of domestic arrears business process",
-          status: "In Progress",
-          template: "Major Change",
-          progress: 65,
-          owner: "Gilbert"
+        { 
+          id: 1, 
+          name: 'IFMS Enhancement - Domestic Arrears', 
+          description: 'Deployment of domestic arrears business process', 
+          status: 'In Progress', 
+          template: 'Major Change', 
+          progress: 65, 
+          owner: 'Gilbert' 
         },
-        {
-          id: 2,
-          name: "New Report: Budget Utilization",
-          description: "Development of new budget utilization report",
-          status: "Completed",
-          template: "Moderate Change",
-          progress: 100,
-          owner: "Finance Team"
+        { 
+          id: 2, 
+          name: 'New Budget Utilization Report', 
+          description: 'Development of new report on the system', 
+          status: 'Completed', 
+          template: 'Moderate Change', 
+          progress: 100, 
+          owner: 'Finance Team' 
         }
       ]);
       setLoading(false);
-    }, 800);
+    }, 600);
   }, []);
 
   const handleCreateProject = (e) => {
     e.preventDefault();
-    if (!newProject.name) return;
+    if (!newProject.name.trim()) return;
 
     const project = {
       id: Date.now(),
       ...newProject,
-      status: "Pending",
+      status: 'Pending',
       progress: 0,
-      owner: "You"
+      owner: 'You',
+      createdAt: new Date().toISOString(),
     };
 
     setProjects([project, ...projects]);
     setShowCreateModal(false);
     setNewProject({ name: '', description: '', template: 'System Onboarding' });
 
-    alert('Project created successfully! (Backend integration coming soon)');
+    alert('✅ Project created successfully!\n\n(Backend integration will be added in next phase)');
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const avatarLetter = (user && (user.full_name || user.username)) 
+    ? (user.full_name || user.username)[0].toUpperCase() 
+    : 'U';
 
   return (
     <ProtectedRoute requiredPermission="view_projects">
-      <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h1>Projects</h1>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: '12px 24px',
-              background: '#1976d2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            + Create New Project
-          </button>
-        </div>
+      <div className="projects-shell" style={{ minHeight: '100vh' }}>
+        {/* Sidebar */}
+        <Sidebar />
 
-        {loading ? (
-          <p>Loading projects...</p>
-        ) : (
-          <div style={{ display: 'grid', gap: '20px' }}>
-            {projects.map(project => (
-              <div key={project.id} style={{
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                padding: '20px',
-                background: 'white'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <h3>{project.name}</h3>
-                    <p style={{ color: '#666', margin: '8px 0' }}>{project.description}</p>
-                    <p><strong>Template:</strong> {project.template}</p>
+        {/* Main Content Area */}
+        <div className="projects-main">
+          <div className="projects-container">
+            <header className="projects-header">
+              <div className="header-title-block">
+                <h1>Projects</h1>
+                <p className="header-subtitle">Manage your system onboarding projects</p>
+              </div>
+
+              <div className="header-icons">
+                <button className="header-icon" title="Help">❓</button>
+                <button className="header-icon" title="Settings">⚙️</button>
+                <button className="header-icon" title="Notifications">✨</button>
+                <button className="header-icon" title="Apps">☰</button>
+              </div>
+
+              <div className="header-profile-wrap" onBlur={() => setTimeout(() => setIsProfileMenuOpen(false), 150)}>
+                <div
+                  className="header-profile-chip"
+                  onClick={() => setIsProfileMenuOpen((v) => !v)}
+                  aria-haspopup="true"
+                  aria-expanded={isProfileMenuOpen}
+                >
+                  <div className="header-profile-avatar">{avatarLetter}</div>
+                  <div className="header-profile-details">
+                    <div className="header-profile-name">{user?.full_name || user?.username || 'User'}</div>
+                    <div className="header-profile-email">{user?.email}</div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      background: project.status === 'Completed' ? '#d4edda' : '#fff3cd',
-                      color: project.status === 'Completed' ? '#155724' : '#856404',
-                      fontSize: '14px'
-                    }}>
-                      {project.status}
-                    </span>
-                    <p style={{ marginTop: '10px' }}><strong>Progress:</strong> {project.progress}%</p>
+                  <span className="header-profile-arrow">▾</span>
+                </div>
+
+                {isProfileMenuOpen && (
+                  <div className="header-profile-menu">
+                    <button 
+                      type="button" 
+                      onClick={() => { 
+                        setIsEditProfileOpen(true); 
+                        setIsProfileMenuOpen(false); 
+                      }}
+                    >
+                      Edit Profile
+                    </button>
+                    <button type="button" onClick={handleLogout}>Sign out</button>
                   </div>
+                )}
+              </div>
+
+              <button className="btn-primary" onClick={() => setShowCreateModal(true)}>+ New Project</button>
+            </header>
+
+            {loading ? (
+              <p className="projects-placeholder">Loading projects...</p>
+            ) : projects.length === 0 ? (
+              <p className="projects-placeholder">No projects found. Create your first project!</p>
+            ) : (
+              <div className="projects-grid">
+                {projects.map((project) => (
+                  <article className="project-card" key={project.id}>
+                    <div className="project-card-top">
+                      <div>
+                        <h3>{project.name}</h3>
+                        <p>{project.description}</p>
+                        <p><strong>Template:</strong> {project.template}</p>
+                      </div>
+                    </div>
+
+                    <div className="project-status">
+                      <span className={project.status === 'Completed' ? 'tag-completed' : 'tag-pending'}>
+                        {project.status}
+                      </span>
+                      <p>Progress: <strong>{project.progress}%</strong></p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {/* Create New Project Modal */}
+            {showCreateModal && (
+              <div className="modal-overlay">
+                <div className="modal-board">
+                  <h2>Create New Project</h2>
+                  <form onSubmit={handleCreateProject}>
+                    <div className="form-group">
+                      <label>Project Name *</label>
+                      <input 
+                        type="text" 
+                        value={newProject.name} 
+                        onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} 
+                        required 
+                        placeholder="e.g. IFMS - New Payment Module" 
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea 
+                        value={newProject.description} 
+                        onChange={(e) => setNewProject({ ...newProject, description: e.target.value })} 
+                        placeholder="Brief description of the change or onboarding" 
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Category / Template</label>
+                      <select 
+                        value={newProject.template} 
+                        onChange={(e) => setNewProject({ ...newProject, template: e.target.value })}
+                      >
+                        <option value="System Onboarding">System Onboarding (SAC)</option>
+                        <option value="Minor Change">Minor Change</option>
+                        <option value="Moderate Change">Moderate Change</option>
+                        <option value="Major Change">Major Change</option>
+                      </select>
+                    </div>
+
+                    <div className="modal-action-row">
+                      <button 
+                        type="button" 
+                        className="btn-secondary" 
+                        onClick={() => setShowCreateModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn-primary">
+                        Create Project
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Edit Profile Modal */}
+            {isEditProfileOpen && (
+              <div className="profile-card-overlay" role="dialog" aria-modal="true">
+                <div className="profile-card">
+                  <h3>Edit Profile</h3>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setUser((curr) => ({ ...curr, full_name: profileForm.full_name, email: profileForm.email }));
+                      setIsEditProfileOpen(false);
+                    }}
+                  >
+                    <label>
+                      Full Name
+                      <input
+                        type="text"
+                        value={profileForm.full_name}
+                        onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))}
+                      />
+                    </label>
+                    <label>
+                      Email
+                      <input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+                      />
+                    </label>
+
+                    <div className="permissions-edit">
+                      <strong>Permissions ({permissions.length})</strong>
+                      <ul>
+                        {permissions.map((perm) => (
+                          <li key={perm}>{perm}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="profile-card-actions">
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditProfileOpen(false)} 
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn-primary">
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Create Project Modal */}
-        {showCreateModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '30px',
-              borderRadius: '12px',
-              width: '500px',
-              maxWidth: '90%'
-            }}>
-              <h2>Create New Project</h2>
-              <form onSubmit={handleCreateProject}>
-                <div style={{ marginBottom: '15px' }}>
-                  <label>Project Name</label>
-                  <input
-                    type="text"
-                    value={newProject.name}
-                    onChange={(e) => setNewProject({...newProject, name: e.target.value})}
-                    required
-                    style={{ width: '100%', padding: '10px', marginTop: '5px' }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '15px' }}>
-                  <label>Description</label>
-                  <textarea
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({...newProject, description: e.target.value})}
-                    style={{ width: '100%', padding: '10px', marginTop: '5px', minHeight: '80px' }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <label>Change Category / Template</label>
-                  <select
-                    value={newProject.template}
-                    onChange={(e) => setNewProject({...newProject, template: e.target.value})}
-                    style={{ width: '100%', padding: '10px', marginTop: '5px' }}
-                  >
-                    <option value="Minor Change">Minor Change</option>
-                    <option value="Moderate Change">Moderate Change</option>
-                    <option value="Major Change">Major Change</option>
-                    <option value="System Onboarding">System Onboarding (SAC)</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    type="button" 
-                    onClick={() => setShowCreateModal(false)}
-                    style={{ flex: 1, padding: '12px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px' }}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    style={{ flex: 1, padding: '12px', background: '#1976d2', color: 'white', border: 'none', borderRadius: '6px' }}
-                  >
-                    Create Project
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </ProtectedRoute>
   );
